@@ -8,11 +8,13 @@ namespace PrimerParcial.Models
 {
     public class Productos
     { 
-        
+        [Key]
         public int ProductoId { get; set; }
+        [Required(ErrorMessage =" es obligatorio llenar este campo, increse una descripcion")]
         public string Descripcion { get; set;}
-        public int Existencia { get; set; }
-        public double Costo { get; set;}
+        [Range(minimum:1, maximum:99)]
+        public float Existencia { get; set; }
+        public float Costo { get; set;}
         public double ValorInventario { get; set;}
 
     }
