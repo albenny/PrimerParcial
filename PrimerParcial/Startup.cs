@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 
 namespace PrimerParcial
 {
-
     public class Startup
     {
         public Startup(IConfiguration configuration)
