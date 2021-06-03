@@ -5,13 +5,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;  
 
-public class Contexto : DbContext
+namespace PrimerParcial.DAL { 
+
+   public class Contexto : DbContext
     {
        
-        public DbSet <Productos> Productos { get; set; }
+        public DbSet<Productos> productos { get; set;}
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlite(@"Data Source = Data\Producto.db");
         }
     }
 }
+

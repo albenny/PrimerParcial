@@ -1,159 +1,174 @@
-﻿using Microsoft.EntityFrameworkCore;
-using PrimerParcial.DAL;
-using PrimerParcial.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using PrimerParcial.DAL;
+using PrimerParcial.Models;
 
 namespace PrimerParcial.BLL
 {
     public class ProductosBLL
     {
-        private Contexto contexto { get; set; }
-        public ProductosBLL(Contexto contexto)
+        public static bool Existe(int id)
         {
-            this.contexto = contexto;
+            Contexto db = new Contexto();
+            bool encontrado = false;
+
+            try
+            {
+                encontrado = db.productos.Any(p => p.ProductoId == id);
+
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                db.Dispose();
+            }
+            return encontrado;
         }
 
-        public async Task<bool> Guardar(Prodctos Productos)
+        public static bool Insertar(Productos productos)
         {
-            if (!await Exciste(Productos.ProductoId))
-                return await Insertar(Productos);
+            bool paso = false;
+            Contexto db = new Contexto();
+
+            try
+            {
+                db.productos.Add(productos);
+                paso = db.SaveChanges() > 0;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                db.Dispose();
+            }
+            return paso;
+        }
+
+        public static bool Modificar(Productos productos)
+        {
+            bool paso = false;
+            Contexto db = new Contexto();
+
+            try
+            {
+                db.Entry(productos).State = EntityState.Modified;
+                paso = db.SaveChanges() > 0;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                db.Dispose();
+            }
+            return paso;
+        }
+
+        public static bool Guardar(Productos productos)
+        {
+            if (!Existe(productos.ProductoId))
+                return Insertar(productos);
             else
-                return await Modificar(Productos);
+                return Modificar(productos);
         }
 
-        private async Task<bool> Exciste(int id)
+        public static bool Eliminar(int id)
         {
-            bool ok = false;
+            bool paso = false;
+            Contexto db = new Contexto();
+
             try
             {
-                ok = await contexto.Productos.AnyAsync(a => a.ProductosId == id);
-            }
-            catch (Exception)
-            {
+                var producto = db.productos.Find(id);
+                    
 
-                throw;
-            }
-
-            return ok;
-        }
-
-        private async Task<bool> Insertar(Productos Productos)
-        {
-            bool ok = false;
-            try
-            {
-                await contexto.Productos.AddAsync(Productos);
-                ok = await contexto.SaveChangesAsync() > 0;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
-            return ok;
-        }
-
-        private async Task<bool> Modificar(Productos Productos)
-        {
-            bool ok = false;
-            try
-            {
-                var aux = contexto.Set<Productos>()
-                    .Local.SingleOrDefault(a => a.ProductosId == Productos.ProductosId);
-                if (aux != null)
+                if (producto != null)
                 {
-                    contexto.Entry(aux).State = EntityState.Detached;
-                }
-
-                contexto.Entry(Productos).State = EntityState.Modified;
-                ok = await contexto.SaveChangesAsync() > 0;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
-            return ok;
-        }
-
-        public async Task<Productos> Buscar(int id)
-        {
-            Articulos Productos;
-            try
-            {
-                Productos = await contexto.Productos
-                    .Where(a => a.ProductosId == id)
-                    .AsNoTracking()
-                    .SingleOrDefaultAsync();
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
-            return Productos;
-        }
-
-        public async Task<bool> Eliminar(int id)
-        {
-            bool ok = false;
-
-            try
-            {
-                var registro = await contexto.Productos.FindAsync(id);
-                if (registro != null)
-                {
-                    contexto.Productos.Remove(registro);
-                    ok = await contexto.SaveChangesAsync() > 0;
+                    db.productos.Remove(producto);//remueve la entidad
+                    paso = db.SaveChanges() > 0;
                 }
             }
             catch (Exception)
             {
-
                 throw;
             }
-
-            return ok;
+            finally
+            {
+                db.Dispose();
+            }
+            return paso;
         }
 
-        public async Task<List<Productos>> GetProductos()
+        public static Productos Buscar(int id)
+        {
+            Contexto db = new Contexto();
+            Productos productos;
+
+            try
+            {
+                productos = db.productos.Find(id);
+                    
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                db.Dispose();
+            }
+
+            return productos;
+        }
+
+        public static List<Productos> GetProductos()
         {
             List<Productos> lista = new List<Productos>();
-
+            Contexto db = new Contexto();
             try
             {
-                lista = await contexto.Productos.ToListAsync();
+                lista = db.productos.ToList();
+                    
             }
             catch (Exception)
             {
-
                 throw;
             }
-
+            finally
+            {
+                db.Dispose();
+            }
             return lista;
         }
 
-        public async Task<List<Productos>> GetProductos(Expression<Func<Productos, bool>> criterio)
+        public static List<Productos> GetList(Expression<Func<Productos, bool>> criterio)
         {
             List<Productos> lista = new List<Productos>();
-
+            Contexto db = new Contexto();
             try
             {
-                lista = await contexto.Productos.Where(criterio).ToListAsync();
+                //obtener la lista y filtrarla según el criterio recibido por parametro.
+                lista = db.productos.Where(criterio).ToList();
+                   
             }
             catch (Exception)
             {
-
                 throw;
             }
-
+            finally
+            {
+                db.Dispose();
+            }
             return lista;
         }
     }
