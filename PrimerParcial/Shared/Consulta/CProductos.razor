@@ -1,0 +1,203 @@
+﻿@page "/Consultar"
+
+@using Models
+@using BLL
+
+@inject IToastService Toast
+@inject NavigationManager Nav
+@inject IJSRuntime Confirmacion
+
+
+<div class="card">
+    <div class="card-header">
+        <h3>Consultar Productos</h3>
+    </div>
+
+    <div class="card-body">
+        <form>
+
+            <div class="form-row align-items-center">
+                <div class="col">
+                    <div class="form-group">
+                        <label>Filtro:</label>
+                        <div class="input-group">
+                            <select class="form-control col-4" @bind="Filtro">
+                                <option value="0">Todos</option>
+                                <option value="1">Producto Id</option>
+                                <option value="2">Descripcion</option>
+                                <option value="3">Existencia</option>
+                                <option value="4">Costo</option>
+                                <option value="5">Valor Inventario</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="form-group">
+                        <label>Criterio:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control col-4" @bind="criterio" />
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-primary input-group-text" @onclick="Consultar">Consultar</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="form-group">
+                <table class=" table">
+                    <thead>
+                        <tr>
+                            <th> Producto Id</th>
+                            <th>Descripcion</th>
+                            <th>Existencia</th>
+                            <th>Costo</th>
+                            <th>Valor Inventario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Lista)
+                        {
+                            <tr>
+                                <td>@item.ProductoId</td>
+                                <td>@item.Descripcion</td>
+                                <td>@item.Existencia</td>
+                                <td>@item.Costo</td>
+                                <td>@item.ValorInventario</td>
+                                <td>
+                                    <a type="button" href="@($"Productos/{item.ProductoId}")" class="btn btn-primary oi oi-pencil"></a>
+                                    <button @onclick="() => Eliminar(item.ProductoId)" class="btn btn-danger oi oi-trash"></button>
+                                </td>
+
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+            </div>
+
+
+
+
+
+        </form>
+
+    </div>
+    <div class="card-footer">
+
+        <div class="form-group offset-8">
+            <label>Resultado:</label>
+            <input type="text" class="form-control" @bind="Resultado" readonly />
+        </div>
+
+    </div>
+</div>
+
+
+
+
+
+
+@code {
+
+    public List<Productos> Lista = new List<Productos>();
+
+    public decimal Resultado { get; set; }
+
+    public int Filtro { get; set; }
+
+    public string criterio { get; set; }
+
+
+
+    protected override void OnInitialized()
+    {
+        Nuevo();
+    }
+
+    private void Nuevo()
+    {
+        Lista = new List<Productos>();
+    }
+
+    async Task Eliminar(int id)
+    {
+        Nav.ToAbsoluteUri($"R_Productos/{id}");
+
+        bool confirmed = await Confirmacion.InvokeAsync<bool>("confirm", "Estas seguro de que deseas eliminar este Producto?");
+        if (confirmed)
+        {
+            bool eliminado;
+            eliminado = ProductosBLL.Eliminar(id);
+
+            if (eliminado)
+            {
+
+                Toast.ShowSuccess("Registro Eliminado exitosamente.");
+            }
+            else
+                Toast.ShowError("No fue posible Eliminar este Registro.");
+            return;
+        }
+    }
+    private void Calcular()
+    {
+        decimal Suma = 0;
+
+        foreach (var productos in Lista)
+        {
+            Suma += productos.ValorInventario;
+        }
+
+        Resultado = Suma;
+    }
+
+    private void Consultar()
+    {
+        try
+        {
+            switch (Filtro)
+            {
+                case 0: //Todos
+                    Lista = ProductosBLL.GetList(a => true);
+                    Calcular();
+                    break;
+                case 1: //Id
+                    int Id = Convert.ToInt32(criterio);
+                    Lista = ProductosBLL.GetList(a => a.ProductoId == Id);
+                    Calcular();
+                    break;
+                case 2: //descripcion
+                    Lista = ProductosBLL.GetList(a => a.Descripcion == criterio);
+                    Calcular();
+                    break;
+                case 3: //existencia
+                    int Existencia = Convert.ToInt32(criterio);
+                    Lista = ProductosBLL.GetList(a => a.Existencia == Existencia);
+                    Calcular();
+                    break;
+                case 4: //costo
+                    decimal Costo = Convert.ToDecimal(criterio);
+                    Lista = ProductosBLL.GetList(a => a.Costo == Costo);
+                    Calcular();
+                    break;
+                case 5://valor de inventario
+                    decimal ValorInventario = Convert.ToDecimal(criterio);
+                    Lista = ProductosBLL.GetList(a => a.ValorInventario == ValorInventario);
+                    Calcular();
+                    break;
+            }
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
+}
